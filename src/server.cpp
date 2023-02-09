@@ -5,8 +5,18 @@
 #include <memory>
 #include <utility>
 #include <boost/asio.hpp>
+#include <sanitizer/lsan_interface.h>
 
 using boost::asio::ip::tcp;
+
+void handlerCont(int signum){
+  if (signum == SIGCONT) {
+    printf("Got SIGCONT\n");
+  }
+#ifndef NDEBUG
+  __lsan_do_recoverable_leak_check();
+#endif
+}
 
 struct session
   : public std::enable_shared_from_this<session>
@@ -15,41 +25,61 @@ struct session
     : socket(std::move(socket)) { }
 
   void start() {
-    do_read();
+    start_read();
+    start_write();
   }
 
-  void do_read() {
+  void start_read() {
     auto self(shared_from_this());
     memset(data, 0, sizeof(data));
     socket.async_read_some(boost::asio::buffer(data, max_length),
       [this, self](boost::system::error_code ec, std::size_t length) {
         if (!ec) {
-          std::cout << data << "\n";
-          do_write(length);
-          sleep(1); //test
+          handle_read(ec, length);
         } else {
           std::cout << ec.message() << "\n";
         }
       });
   }
 
-  void do_write(std::size_t length)
-  {
+  void handle_read(const boost::system::error_code& error,
+    std::size_t n) {
+    if (!error) {
+      std::cout << data;
+      start_read();
+    } else {
+      std::cout << error.message() << "\n";
+    }
+  }
+
+  void start_write() {
     auto self(shared_from_this());
-    boost::asio::async_write(socket, boost::asio::buffer("hello client \n"),
-        [this, self](boost::system::error_code ec, std::size_t /*length*/)
-        {
-          if (!ec) {
-            do_read();
-          } else {
-            std::cout << ec.message() << "\n";
-          }
-        });
+    boost::asio::async_write(socket,
+      boost::asio::buffer(msg + (std::to_string(cnt++) + "\n").c_str()),
+      [this, self](boost::system::error_code ec, std::size_t /*length*/)
+      {
+        if (!ec) {
+          handle_write(ec);
+        } else {
+          std::cout << ec.message() << "\n";
+        }
+      });
+  }
+
+  void handle_write(const boost::system::error_code& error) {
+    if (!error) {
+      sleep(1); //test
+      start_write();
+    } else {
+      std::cout << error.message() << "\n";
+    }
   }
 
   tcp::socket socket;
   enum { max_length = 1024 };
   char data[max_length];
+  std::string msg = "hello client ";
+  size_t cnt = 0;
 };
 
 struct server {
@@ -69,7 +99,7 @@ struct server {
           std::make_shared<session>(std::move(socket))->start();
         } else {
           std::cout << ec.message() << ", " <<
-            socket.remote_endpoint();
+            socket.remote_endpoint() << "\n";
         }
         do_accept();
       });
@@ -84,8 +114,11 @@ int main(int argc, char* argv[]) {
     return 1;
   }
 
+  signal(SIGCONT, handlerCont); // $ man 7 signal
   boost::asio::io_context io_context;
   server s(io_context, std::atoi(argv[1]));
   io_context.run();
+
   return 0;
 }
+

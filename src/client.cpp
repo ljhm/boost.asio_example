@@ -9,11 +9,21 @@
 #include <functional>
 #include <iostream>
 #include <string>
+#include <sanitizer/lsan_interface.h>
 
 using boost::asio::steady_timer;
 using boost::asio::ip::tcp;
 using std::placeholders::_1;
 using std::placeholders::_2;
+
+void handlerCont(int signum){
+  if (signum == SIGCONT) {
+    printf("Got SIGCONT\n");
+  }
+#ifndef NDEBUG
+  __lsan_do_recoverable_leak_check();
+#endif
+}
 
 struct client {
   client(boost::asio::io_context& io_context)
@@ -50,7 +60,7 @@ struct client {
     } else {
       std::cout << "Connected to " << endpoint_iter->endpoint() << "\n";
 
-      //do I have to write before read?
+      //do not have to write before read
       start_write();
       start_read();
     }
@@ -58,14 +68,15 @@ struct client {
 
   void start_write() {
     boost::asio::async_write(socket,
-      boost::asio::buffer("hello server " + msg_ + " "),
+      boost::asio::buffer("hello server " + msg_ + " " +
+        std::to_string(cnt++) + "\n"),
       std::bind(&client::handle_write, this, _1));
   }
 
   void handle_write(const boost::system::error_code& error) {
     if (!error) {
-      start_write();
       sleep(1); //test
+      start_write();
     } else {
       std::cout << error.message() << "\n";
     }
@@ -73,7 +84,7 @@ struct client {
 
   void start_read() {
     boost::asio::async_read_until(socket,
-      boost::asio::dynamic_buffer(input_buffer_), '\n',
+      boost::asio::dynamic_buffer(input_buffer), '\n',
       std::bind(&client::handle_read, this, _1, _2));
   }
 
@@ -81,14 +92,14 @@ struct client {
     std::size_t n)
   {
     if (!error) {
-      std::string line(input_buffer_.substr(0, n - 1));
-      input_buffer_.erase(0, n);
+      std::string line(input_buffer.substr(0, n - 1));
+      input_buffer.erase(0, n);
 
       if (!line.empty()) {
         std::cout << line << "\n";
       }
 
-      start_read();//
+      start_read();
     } else {
       std::cout << error.message() << "\n";
     }
@@ -96,23 +107,22 @@ struct client {
 
   tcp::resolver::results_type endpoints_;
   tcp::socket socket;
-  std::string input_buffer_;
+  std::string input_buffer;
   std::string msg_;
+  size_t cnt = 0;
 };
 
-int main(int argc, char* argv[])
-{
+int main(int argc, char* argv[]) {
   if (argc != 4) {
     std::cerr << "Usage: client <host> <port> <msg>\n";
     return 1;
   }
 
+  signal(SIGCONT, handlerCont); // $ man 7 signal
   boost::asio::io_context io_context;
   tcp::resolver r(io_context);
   client c(io_context);
-
   c.start(r.resolve(argv[1], argv[2]), argv[3]);
-
   io_context.run();
 
   return 0;

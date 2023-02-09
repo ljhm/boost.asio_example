@@ -1,14 +1,19 @@
 # apt install libboost-dev
+#
+# or, manually
 # cd boost_1_81_0
 # ./bootstrap.sh
 # ./b2
-#include paths: /home/ljh/Downloads/boost_1_81_0
-#library paths: /home/ljh/Downloads/boost_1_81_0/stage/lib
+# include path: /home/ljh/Downloads/boost_1_81_0
+# library path: /home/ljh/Downloads/boost_1_81_0/stage/lib
 
 cmake_minimum_required(VERSION 3.18)
 project(MyProject VERSION 1.0)
 set(CMAKE_BUILD_RPATH_USE_ORIGIN TRUE)
 set(CMAKE_INSTALL_RPATH "$ORIGIN/../lib")
+if (CMAKE_BUILD_TYPE STREQUAL Debug)
+  set(CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS} -fsanitize=address) # .cpp
+endif()
 set(CMAKE_CXX_STANDARD 11) # .cpp
 set(CMAKE_CXX_STANDARD_REQUIRED TRUE) # .cpp
 #file(GLOB SOURCES *.cpp) # .cpp
