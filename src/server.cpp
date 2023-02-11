@@ -25,19 +25,14 @@ struct session
     socket.async_read_some(
       boost::asio::buffer(input_data, sizeof(input_data)),
       [this, self](boost::system::error_code ec, std::size_t length) {
-        handle_read(ec, length);
+        if (!ec) {
+          std::cout << input_data;
+          start_read();
+        } else {
+          std::cout << ec.message() << "\n";
+        }
       }
     );
-  }
-
-  void handle_read(const boost::system::error_code& ec,
-    std::size_t length) {
-    if (!ec) {
-      std::cout << input_data;
-      start_read();
-    } else {
-      std::cout << ec.message() << "\n";
-    }
   }
 
   void start_write() {
@@ -50,20 +45,14 @@ struct session
       boost::asio::buffer(output_data, sizeof(input_data)),
       [this, self](boost::system::error_code ec, std::size_t length)
       {
-        handle_write(ec, length);
+        if (!ec) {
+          // sleep(1); //test
+          start_write();
+        } else {
+          std::cout << ec.message() << "\n";
+        }
       }
     );
-  }
-
-  void handle_write(const boost::system::error_code& ec,
-    std::size_t length)
-  {
-    if (!ec) {
-      // sleep(1); //test
-      start_write();
-    } else {
-      std::cout << ec.message() << "\n";
-    }
   }
 
   boost::asio::ip::tcp::socket socket;
