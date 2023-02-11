@@ -4,125 +4,147 @@
 #include <boost/asio/io_context.hpp>
 #include <boost/asio/ip/tcp.hpp>
 #include <boost/asio/read_until.hpp>
-#include <boost/asio/steady_timer.hpp>
 #include <boost/asio/write.hpp>
 #include <functional>
 #include <iostream>
 #include <string>
 #include <sanitizer/lsan_interface.h>
 
-using boost::asio::steady_timer;
-using boost::asio::ip::tcp;
-using std::placeholders::_1;
-using std::placeholders::_2;
+std::string client_tag; //test
+
+struct session
+  : public std::enable_shared_from_this<session>
+{
+  session(boost::asio::ip::tcp::socket socket)
+    : socket(std::move(socket))
+  { }
+
+  void start() {
+    start_read();
+    start_write();
+  }
+
+  void start_read() {
+    auto self(shared_from_this());
+    memset(input_data, 0, sizeof(input_data));
+    socket.async_read_some(
+      boost::asio::buffer(input_data, sizeof(input_data)),
+      [this, self](boost::system::error_code ec, std::size_t length) {
+        handle_read(ec, length);
+      }
+    );
+  }
+
+  void handle_read(const boost::system::error_code& ec,
+    std::size_t length) {
+    if (!ec) {
+      std::cout << input_data;
+      start_read();
+    } else {
+      std::cout << ec.message() << "\n";
+    }
+  }
+
+  void start_write() {
+    auto self(shared_from_this());
+    memset(output_data, 0, sizeof(output_data));
+    snprintf(output_data, sizeof(output_data) - 1,
+      "hello server %s %zu\n", client_tag.c_str(), cnt++);
+    boost::asio::async_write(
+      socket,
+      boost::asio::buffer(output_data, sizeof(input_data)),
+      [this, self](boost::system::error_code ec, std::size_t length)
+      {
+        handle_write(ec, length);
+      }
+    );
+  }
+
+  void handle_write(const boost::system::error_code& ec,
+    std::size_t length)
+  {
+    if (!ec) {
+      // sleep(1); //test
+      start_write();
+    } else {
+      std::cout << ec.message() << "\n";
+    }
+  }
+
+  boost::asio::ip::tcp::socket socket;
+  enum { LEN = 1024 };
+  char input_data[LEN];
+  char output_data[LEN];
+  size_t cnt = 0;
+};
+
+struct connector {
+  connector(boost::asio::io_context& io_context)
+    : socket(io_context)
+  { }
+
+  void start(boost::asio::ip::tcp::resolver::results_type endpoints)
+  {
+    endpoints_ = endpoints;
+    start_connect(endpoints_.begin());
+  }
+
+  void start_connect(
+    boost::asio::ip::tcp::resolver::results_type::iterator
+    endpoint_iter)
+  {
+    if (endpoint_iter != endpoints_.end()) {
+      socket.async_connect(
+        endpoint_iter->endpoint(),
+        [=](const boost::system::error_code ec)
+        {
+          handle_connect(ec, endpoint_iter);
+        }
+      );
+    }
+  }
+
+  void handle_connect(const boost::system::error_code& ec,
+    boost::asio::ip::tcp::resolver::results_type::iterator
+    endpoint_iter)
+  {
+    if (!socket.is_open()) {
+      std::cout << "Connect timed out\n";
+      start_connect(++endpoint_iter);
+    } else if (ec) {
+      std::cout << "Connect error: " << ec.message() << "\n";
+      socket.close();
+      start_connect(++endpoint_iter);
+    } else {
+      std::cout << "Connected to " << endpoint_iter->endpoint() << "\n";
+      std::make_shared<session>(std::move(socket))->start();
+    }
+  }
+
+  boost::asio::ip::tcp::resolver::results_type endpoints_;
+  boost::asio::ip::tcp::socket socket;
+};
 
 void handlerCont(int signum){
-  if (signum == SIGCONT) {
-    printf("Got SIGCONT\n");
-  }
+  printf("SIGCONT %d\n", signum);
 #ifndef NDEBUG
   __lsan_do_recoverable_leak_check();
 #endif
 }
 
-struct client {
-  client(boost::asio::io_context& io_context)
-    : socket(io_context) { }
-
-  void start(tcp::resolver::results_type endpoints,
-    const std::string& msg)
-  {
-    endpoints_ = endpoints;
-    msg_ = msg;
-    start_connect(endpoints_.begin());
-  }
-
-  void start_connect(tcp::resolver::results_type::iterator
-    endpoint_iter)
-  {
-    if (endpoint_iter != endpoints_.end()) {
-      socket.async_connect(endpoint_iter->endpoint(),
-        std::bind(&client::handle_connect,
-          this, _1, endpoint_iter));
-    }
-  }
-
-  void handle_connect(const boost::system::error_code& error,
-      tcp::resolver::results_type::iterator endpoint_iter)
-  {
-    if (!socket.is_open()) {
-      std::cout << "Connect timed out\n";
-      start_connect(++endpoint_iter);
-    } else if (error) {
-      std::cout << "Connect error: " << error.message() << "\n";
-      socket.close();
-      start_connect(++endpoint_iter);
-    } else {
-      std::cout << "Connected to " << endpoint_iter->endpoint() << "\n";
-
-      //do not have to write before read
-      start_write();
-      start_read();
-    }
-  }
-
-  void start_write() {
-    boost::asio::async_write(socket,
-      boost::asio::buffer("hello server " + msg_ + " " +
-        std::to_string(cnt++) + "\n"),
-      std::bind(&client::handle_write, this, _1));
-  }
-
-  void handle_write(const boost::system::error_code& error) {
-    if (!error) {
-      sleep(1); //test
-      start_write();
-    } else {
-      std::cout << error.message() << "\n";
-    }
-  }
-
-  void start_read() {
-    boost::asio::async_read_until(socket,
-      boost::asio::dynamic_buffer(input_buffer), '\n',
-      std::bind(&client::handle_read, this, _1, _2));
-  }
-
-  void handle_read(const boost::system::error_code& error,
-    std::size_t n)
-  {
-    if (!error) {
-      std::string line(input_buffer.substr(0, n - 1));
-      input_buffer.erase(0, n);
-
-      if (!line.empty()) {
-        std::cout << line << "\n";
-      }
-
-      start_read();
-    } else {
-      std::cout << error.message() << "\n";
-    }
-  }
-
-  tcp::resolver::results_type endpoints_;
-  tcp::socket socket;
-  std::string input_buffer;
-  std::string msg_;
-  size_t cnt = 0;
-};
-
 int main(int argc, char* argv[]) {
   if (argc != 4) {
-    std::cerr << "Usage: client <host> <port> <msg>\n";
+    std::cerr << "Usage: client <host> <port> <tag>\n";
     return 1;
   }
 
   signal(SIGCONT, handlerCont); // $ man 7 signal
+  client_tag = argv[3];
+
   boost::asio::io_context io_context;
-  tcp::resolver r(io_context);
-  client c(io_context);
-  c.start(r.resolve(argv[1], argv[2]), argv[3]);
+  boost::asio::ip::tcp::resolver r(io_context);
+  connector c(io_context);
+  c.start(r.resolve(argv[1], argv[2]));
   io_context.run();
 
   return 0;

@@ -7,22 +7,12 @@
 #include <boost/asio.hpp>
 #include <sanitizer/lsan_interface.h>
 
-using boost::asio::ip::tcp;
-
-void handlerCont(int signum){
-  if (signum == SIGCONT) {
-    printf("Got SIGCONT\n");
-  }
-#ifndef NDEBUG
-  __lsan_do_recoverable_leak_check();
-#endif
-}
-
 struct session
   : public std::enable_shared_from_this<session>
 {
-  session(tcp::socket socket)
-    : socket(std::move(socket)) { }
+  session(boost::asio::ip::tcp::socket socket)
+    : socket(std::move(socket))
+  { }
 
   void start() {
     start_read();
@@ -31,82 +21,93 @@ struct session
 
   void start_read() {
     auto self(shared_from_this());
-    memset(data, 0, sizeof(data));
-    socket.async_read_some(boost::asio::buffer(data, max_length),
+    memset(input_data, 0, sizeof(input_data));
+    socket.async_read_some(
+      boost::asio::buffer(input_data, sizeof(input_data)),
       [this, self](boost::system::error_code ec, std::size_t length) {
-        if (!ec) {
-          handle_read(ec, length);
-        } else {
-          std::cout << ec.message() << "\n";
-        }
-      });
+        handle_read(ec, length);
+      }
+    );
   }
 
-  void handle_read(const boost::system::error_code& error,
-    std::size_t n) {
-    if (!error) {
-      std::cout << data;
+  void handle_read(const boost::system::error_code& ec,
+    std::size_t length) {
+    if (!ec) {
+      std::cout << input_data;
       start_read();
     } else {
-      std::cout << error.message() << "\n";
+      std::cout << ec.message() << "\n";
     }
   }
 
   void start_write() {
     auto self(shared_from_this());
-    boost::asio::async_write(socket,
-      boost::asio::buffer(msg + (std::to_string(cnt++) + "\n").c_str()),
-      [this, self](boost::system::error_code ec, std::size_t /*length*/)
+    memset(output_data, 0, sizeof(output_data));
+    snprintf(output_data, sizeof(output_data) - 1,
+      "hello server %zu\n", cnt++);
+    boost::asio::async_write(
+      socket,
+      boost::asio::buffer(output_data, sizeof(input_data)),
+      [this, self](boost::system::error_code ec, std::size_t length)
       {
-        if (!ec) {
-          handle_write(ec);
-        } else {
-          std::cout << ec.message() << "\n";
-        }
-      });
+        handle_write(ec, length);
+      }
+    );
   }
 
-  void handle_write(const boost::system::error_code& error) {
-    if (!error) {
-      sleep(1); //test
+  void handle_write(const boost::system::error_code& ec,
+    std::size_t length)
+  {
+    if (!ec) {
+      // sleep(1); //test
       start_write();
     } else {
-      std::cout << error.message() << "\n";
+      std::cout << ec.message() << "\n";
     }
   }
 
-  tcp::socket socket;
-  enum { max_length = 1024 };
-  char data[max_length];
-  std::string msg = "hello client ";
+  boost::asio::ip::tcp::socket socket;
+  enum { LEN = 1024 };
+  char input_data[LEN];
+  char output_data[LEN];
   size_t cnt = 0;
 };
 
-struct server {
-  server(boost::asio::io_context& io_context, short port)
-    : acceptor(io_context, tcp::endpoint(tcp::v4(), port))
+struct acceptor {
+  acceptor(boost::asio::io_context& io_context, short port)
+    : acceptor_(io_context, boost::asio::ip::tcp::endpoint(
+        boost::asio::ip::tcp::v4(), port))
   {
-    std::cout << "listen on port: " << port << " \n";
+    std::cout << "Listen on port: " << port << " \n";
     do_accept();
   }
 
   void do_accept() {
-    acceptor.async_accept(
-      [this](boost::system::error_code ec, tcp::socket socket) {
+    acceptor_.async_accept(
+      [this](boost::system::error_code ec,
+        boost::asio::ip::tcp::socket socket)
+      {
         if (!ec) {
-          std::cout << "accept connection: "
+          std::cout << "Accept connection: "
             << socket.remote_endpoint() << "\n";
           std::make_shared<session>(std::move(socket))->start();
         } else {
-          std::cout << ec.message() << ", " <<
-            socket.remote_endpoint() << "\n";
+          std::cout << ec.message() << "\n";
         }
         do_accept();
-      });
+      }
+    );
   }
 
-  tcp::acceptor acceptor;
+  boost::asio::ip::tcp::acceptor acceptor_;
 };
+
+void handlerCont(int signum) {
+  printf("SIGCONT %d\n", signum);
+#ifndef NDEBUG
+  __lsan_do_recoverable_leak_check();
+#endif
+}
 
 int main(int argc, char* argv[]) {
   if (argc != 2) {
@@ -115,8 +116,9 @@ int main(int argc, char* argv[]) {
   }
 
   signal(SIGCONT, handlerCont); // $ man 7 signal
+
   boost::asio::io_context io_context;
-  server s(io_context, std::atoi(argv[1]));
+  acceptor a(io_context, std::atoi(argv[1]));
   io_context.run();
 
   return 0;
