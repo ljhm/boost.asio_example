@@ -79,45 +79,37 @@ struct session
 };
 
 struct connector {
-  connector(boost::asio::io_context& io_context)
-    : socket(io_context)
-  { }
-
-  void start(boost::asio::ip::tcp::resolver::results_type endpoints)
+  connector(boost::asio::io_context& io_context,
+    boost::asio::ip::tcp::resolver::results_type endpoints)
+      : socket(io_context)
   {
     endpoints_ = endpoints;
-    start_connect(endpoints_.begin());
+    do_connect(endpoints_.begin());
   }
 
-  void start_connect(
+  void do_connect (
     boost::asio::ip::tcp::resolver::results_type::iterator
     endpoint_iter)
   {
     if (endpoint_iter != endpoints_.end()) {
       socket.async_connect(
         endpoint_iter->endpoint(),
-        [=](const boost::system::error_code ec)
+        [=](const boost::system::error_code ec) mutable
         {
-          handle_connect(ec, endpoint_iter);
+          if (!socket.is_open()) {
+            std::cout << "Connect timed out\n";
+            do_connect(++endpoint_iter);
+          } else if (ec) {
+            std::cout << "Connect error: " << ec.message() << "\n";
+            socket.close();
+            do_connect(++endpoint_iter);
+          } else {
+            std::cout << "Connected to " <<
+              endpoint_iter->endpoint() << "\n";
+            std::make_shared<session>(std::move(socket))->start();
+          }
         }
       );
-    }
-  }
-
-  void handle_connect(const boost::system::error_code& ec,
-    boost::asio::ip::tcp::resolver::results_type::iterator
-    endpoint_iter)
-  {
-    if (!socket.is_open()) {
-      std::cout << "Connect timed out\n";
-      start_connect(++endpoint_iter);
-    } else if (ec) {
-      std::cout << "Connect error: " << ec.message() << "\n";
-      socket.close();
-      start_connect(++endpoint_iter);
-    } else {
-      std::cout << "Connected to " << endpoint_iter->endpoint() << "\n";
-      std::make_shared<session>(std::move(socket))->start();
     }
   }
 
@@ -143,8 +135,7 @@ int main(int argc, char* argv[]) {
 
   boost::asio::io_context io_context;
   boost::asio::ip::tcp::resolver r(io_context);
-  connector c(io_context);
-  c.start(r.resolve(argv[1], argv[2]));
+  connector c(io_context, r.resolve(argv[1], argv[2]));
   io_context.run();
 
   return 0;

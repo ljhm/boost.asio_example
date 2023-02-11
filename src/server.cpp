@@ -44,7 +44,7 @@ struct session
     auto self(shared_from_this());
     memset(output_data, 0, sizeof(output_data));
     snprintf(output_data, sizeof(output_data) - 1,
-      "hello server %zu\n", cnt++);
+      "hello client %zu\n", cnt++);
     boost::asio::async_write(
       socket,
       boost::asio::buffer(output_data, sizeof(input_data)),
