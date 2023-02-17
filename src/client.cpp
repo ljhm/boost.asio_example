@@ -65,20 +65,19 @@ struct session
   size_t cnt = 0;
 };
 
-struct connector {
-  connector(boost::asio::io_context& io_context,
+struct client {
+  client(boost::asio::io_context& io_context,
     boost::asio::ip::tcp::resolver::results_type endpoints)
-      : socket(io_context)
+      : socket(io_context), endpoints(endpoints)
   {
-    endpoints_ = endpoints;
-    do_connect(endpoints_.begin());
+    do_connect(endpoints.begin());
   }
 
   void do_connect (
     boost::asio::ip::tcp::resolver::results_type::iterator
     endpoint_iter)
   {
-    if (endpoint_iter != endpoints_.end()) {
+    if (endpoint_iter != endpoints.end()) {
       socket.async_connect(
         endpoint_iter->endpoint(),
         [&](const boost::system::error_code ec)
@@ -99,7 +98,7 @@ struct connector {
     }
   }
 
-  boost::asio::ip::tcp::resolver::results_type endpoints_;
+  boost::asio::ip::tcp::resolver::results_type endpoints;
   boost::asio::ip::tcp::socket socket;
 };
 
@@ -121,7 +120,7 @@ int main(int argc, char* argv[]) {
 
   boost::asio::io_context io_context;
   boost::asio::ip::tcp::resolver r(io_context);
-  connector c(io_context, r.resolve(argv[1], argv[2]));
+  client c(io_context, r.resolve(argv[1], argv[2]));
   io_context.run();
 
   return 0;

@@ -62,9 +62,9 @@ struct session
   size_t cnt = 0;
 };
 
-struct acceptor {
-  acceptor(boost::asio::io_context& io_context, short port)
-    : acceptor_(io_context, boost::asio::ip::tcp::endpoint(
+struct server {
+  server(boost::asio::io_context& io_context, short port)
+    : acceptor(io_context, boost::asio::ip::tcp::endpoint(
         boost::asio::ip::tcp::v4(), port))
   {
     std::cout << "Listen on port: " << port << " \n";
@@ -72,7 +72,7 @@ struct acceptor {
   }
 
   void do_accept() {
-    acceptor_.async_accept(
+    acceptor.async_accept(
       [this](boost::system::error_code ec,
         boost::asio::ip::tcp::socket socket)
       {
@@ -88,7 +88,7 @@ struct acceptor {
     );
   }
 
-  boost::asio::ip::tcp::acceptor acceptor_;
+  boost::asio::ip::tcp::acceptor acceptor;
 };
 
 void handlerCont(int signum) {
@@ -107,7 +107,7 @@ int main(int argc, char* argv[]) {
   signal(SIGCONT, handlerCont); // $ man 7 signal
 
   boost::asio::io_context io_context;
-  acceptor a(io_context, std::atoi(argv[1]));
+  server s(io_context, std::atoi(argv[1]));
   io_context.run();
 
   return 0;
