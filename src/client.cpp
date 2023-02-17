@@ -3,9 +3,7 @@
 #include <boost/asio/buffer.hpp>
 #include <boost/asio/io_context.hpp>
 #include <boost/asio/ip/tcp.hpp>
-#include <boost/asio/read_until.hpp>
 #include <boost/asio/write.hpp>
-#include <functional>
 #include <iostream>
 #include <string>
 #include <sanitizer/lsan_interface.h>
@@ -83,7 +81,7 @@ struct connector {
     if (endpoint_iter != endpoints_.end()) {
       socket.async_connect(
         endpoint_iter->endpoint(),
-        [=](const boost::system::error_code ec) mutable
+        [&](const boost::system::error_code ec)
         {
           if (!socket.is_open()) {
             std::cout << "Connect timed out\n";
@@ -91,10 +89,9 @@ struct connector {
           } else if (ec) {
             std::cout << "Connect error: " << ec.message() << "\n";
             socket.close();
-            do_connect(++endpoint_iter);
           } else {
             std::cout << "Connected to " <<
-              endpoint_iter->endpoint() << "\n";
+              socket.remote_endpoint() << "\n";
             std::make_shared<session>(std::move(socket))->start();
           }
         }
