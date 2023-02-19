@@ -9,7 +9,7 @@ include_directories(/home/ljh/Downloads/boost_1_81_0)
 link_directories(/home/ljh/Downloads/boost_1_81_0/stage/lib)
 link_libraries(pthread)
 #set(CMAKE_CXX_COMPILER g++) # .cpp
-add_compile_options(-std=c11) # .cpp
+add_compile_options(-std=c++11) # .cpp
 file(GLOB SOURCES *.cpp) # .cpp
 
 #add_executable(main ${SOURCES})
