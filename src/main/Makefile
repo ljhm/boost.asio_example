@@ -1,30 +1,43 @@
-# build shared library with -fPIC, -shared
-CXXFLAGS   = # -g -O3 -fPIC # CXXFLAGS for .cpp
-CPPFLAGS = #-MMD -MP -I ../foo
-LDFLAGS  = # -L ../foo -Wl,-rpath,'$$ORIGIN/../foo' # -shared
-LDLIBS   = -l pthread
-CC      = $(CXX) # link with CXX for .cpp
+# Makefile for subdir
 
-CPPFLAGS += -I /home/ljh/Downloads/boost_1_81_0
-LDFLAGS += -L /home/ljh/Downloads/boost_1_81_0/stage/lib
-LDFLAGS += -Wl,-rpath,'$$ORIGIN/../lib'
+# build shared library with -fPIC, -shared
+CXXFLAGS  = # -g -O3 -fPIC # CXXFLAGS for .cpp
+CPPFLAGS  = -MMD -MP -I/home/ljh/Downloads/boost_1_81_0/
+LDFLAGS   = -L/home/ljh/Downloads/boost_1_81_0/stage/lib # -L$(OBJDIR)/foo # -shared
+LDLIBS    = -lpthread
+# CC      = $(CXX) # link with CXX for .cpp
+
+LDFLAGS  += -Wl,-rpath,$(OBJDIR)/foo
+LDFLAGS  += -Wl,-rpath,'$$ORIGIN/../lib'
 #LDFLAGS += -Wl,-soname,$(soname)
 
 # make # NDEBUG=1
 ifdef NDEBUG
 CPPFLAGS += -DNDEBUG
-CXXFLAGS += -O3 # .cpp
+CXXFLAGS   += -O3 # .cpp
 else
-CXXFLAGS += -g # .cpp
-LDFLAGS += -fsanitize=address
+CXXFLAGS   += -g # .cpp
+LDFLAGS  += -fsanitize=address
 endif
 
-all : server client
+SUBDIR    = $(OBJDIR)/main
 
-# target name is basename of one of the source files
-# main : $(patsubst %.c,%.o,$(wildcard *.c)) # .cpp
-server : $(patsubst %.cpp,%.o,server.cpp) # .cpp
-client : $(patsubst %.cpp,%.o,client.cpp) # .cpp
--include *.d
-clean : ; -rm -fr *.o *.d server client
+all : $(SUBDIR)/server $(SUBDIR)/client
+
+# $(SUBDIR)/main : $(SUBDIR)/$(patsubst %.c,%.o,$(wildcard *.c)) # .cpp
+# 	$(CC) $(LDFLAGS) $^ $(LDLIBS) -o $@
+
+$(SUBDIR)/server : $(SUBDIR)/$(patsubst %.cpp,%.o,server.cpp) # .cpp
+	$(CXX) $(LDFLAGS) $^ $(LDLIBS) -o $@
+
+$(SUBDIR)/client : $(SUBDIR)/$(patsubst %.cpp,%.o,client.cpp) # .cpp
+	$(CXX) $(LDFLAGS) $^ $(LDLIBS) -o $@
+
+$(SUBDIR)/%.o : %.cpp | $(SUBDIR) # .cpp
+	$(CXX) $(CXXFLAGS) $(CPPFLAGS) -c -o $@ $<
+
+$(SUBDIR) : ; @ mkdir $@
+
+-include $(SUBDIR)/*.d
+clean : ; -rm -fr $(SUBDIR)
 .PHONY : all clean
