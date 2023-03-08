@@ -24,13 +24,14 @@ SUBDIR    = $(OBJDIR)/main
 
 all : $(SUBDIR)/server $(SUBDIR)/client
 
-# $(SUBDIR)/main : $(SUBDIR)/$(patsubst %.c,%.o,$(wildcard *.c)) # .cpp
+# https://make.mad-scientist.net/papers/how-not-to-use-vpath/
+# $(SUBDIR)/main : $(addprefix $(SUBDIR)/,$(patsubst %.c,%.o,$(wildcard *.c))) # .cpp
 # 	$(CC) $(LDFLAGS) $^ $(LDLIBS) -o $@
 
-$(SUBDIR)/server : $(SUBDIR)/$(patsubst %.cpp,%.o,server.cpp) # .cpp
+$(SUBDIR)/server : $(addprefix $(SUBDIR)/,$(patsubst %.cpp,%.o,server.cpp)) # .cpp
 	$(CXX) $(LDFLAGS) $^ $(LDLIBS) -o $@
 
-$(SUBDIR)/client : $(SUBDIR)/$(patsubst %.cpp,%.o,client.cpp) # .cpp
+$(SUBDIR)/client : $(addprefix $(SUBDIR)/,$(patsubst %.cpp,%.o,client.cpp)) # .cpp
 	$(CXX) $(LDFLAGS) $^ $(LDLIBS) -o $@
 
 $(SUBDIR)/%.o : %.cpp | $(SUBDIR) # .cpp
