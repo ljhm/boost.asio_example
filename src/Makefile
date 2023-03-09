@@ -16,10 +16,10 @@ define makever
 endef
 
 # make # BUILD_DIR=build
-ifndef BUILD_DIR
-export OBJDIR = $(abspath build)
-else
+ifdef BUILD_DIR
 export OBJDIR = $(abspath $(BUILD_DIR))
+else
+export OBJDIR = $(abspath build)
 endif
 
 SUBDIRS = main # foo
