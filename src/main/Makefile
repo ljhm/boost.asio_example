@@ -20,7 +20,7 @@ CXXFLAGS   += -g # .cpp
 LDFLAGS  += -fsanitize=address
 endif
 
-SUBDIR    = $(OBJDIR)/main
+SUBDIR    = $(OBJDIR)/$(notdir $(CURDIR))
 
 all : $(SUBDIR)/server $(SUBDIR)/client
 
