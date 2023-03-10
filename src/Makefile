@@ -34,7 +34,7 @@ main : ; @ $(MAKE) -C $@
 # foo : ; $(call makever,1.2.3)
 
 # make DESTDIR=~/foo install
-# Alexandre Duret-Lutz’s Autotools Tutorial (without animations):
+# Alexandre Duret-Lutz's Autotools Tutorial (without animations):
 # "is ready to be uncompressed in / on many hosts"
 install :
 	install -d "$(DESTDIR)/usr/local/bin"
