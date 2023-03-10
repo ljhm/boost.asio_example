@@ -104,7 +104,7 @@ int main(int argc, char* argv[]) {
     return 1;
   }
 
-  signal(SIGCONT, handlerCont); // kill -CONT <pid>
+  signal(SIGCONT, handlerCont); // kill -CONT 123 # pid
 
   boost::asio::io_context io_context;
   server s(io_context, std::atoi(argv[1]));

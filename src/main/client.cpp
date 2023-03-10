@@ -115,7 +115,7 @@ int main(int argc, char* argv[]) {
     return 1;
   }
 
-  signal(SIGCONT, handlerCont); // kill -CONT <pid>
+  signal(SIGCONT, handlerCont); // kill -CONT 123 # pid
   client_tag = argv[3];
 
   boost::asio::io_context io_context;
