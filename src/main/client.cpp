@@ -6,7 +6,10 @@
 #include <boost/asio/write.hpp>
 #include <iostream>
 #include <string>
+
+#ifndef NDEBUG
 #include <sanitizer/lsan_interface.h>
+#endif
 
 std::string client_tag; //test
 
