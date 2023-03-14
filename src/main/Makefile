@@ -2,12 +2,12 @@
 
 # build shared library with -fPIC, -shared
 CXXFLAGS  = # -g -O3 -fPIC # CXXFLAGS for .cpp
-CPPFLAGS  = -MMD -MP -I/home/ljh/Downloads/boost_1_81_0/
+CPPFLAGS  = -MMD -MP -I/home/ljh/Downloads/boost_1_81_0/ # -I../foo
 LDFLAGS   = -L/home/ljh/Downloads/boost_1_81_0/stage/lib # -L$(OBJDIR)/foo # -shared
 LDLIBS    = -lpthread
 # CC      = $(CXX) # link with CXX for .cpp
 
-LDFLAGS  += -Wl,-rpath,$(OBJDIR)/foo
+LDFLAGS  += -Wl,-rpath,'$$ORIGIN/../foo'
 LDFLAGS  += -Wl,-rpath,'$$ORIGIN/../lib'
 #LDFLAGS += -Wl,-soname,$(soname)
 
