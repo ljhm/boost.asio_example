@@ -48,7 +48,7 @@ struct session
       "hello server %s %zu\n", client_tag.c_str(), cnt++);
     boost::asio::async_write(
       socket,
-      boost::asio::buffer(output_data, sizeof(input_data)),
+      boost::asio::buffer(output_data, sizeof(output_data)),
       [&, self](boost::system::error_code ec, std::size_t length)
       {
         if (!ec) {
