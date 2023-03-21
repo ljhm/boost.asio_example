@@ -1,7 +1,7 @@
 # Makefile for subdir
 
 # build shared library with -fPIC, -shared
-CXXFLAGS  = # -g -O3 -fPIC # CXXFLAGS for .cpp
+CXXFLAGS  = -std=c++2a # -g -O3 -fPIC # CXXFLAGS for .cpp
 CPPFLAGS  = -MMD -MP -I/home/ljh/Downloads/boost_1_81_0/ # -I../foo
 LDFLAGS   = -L/home/ljh/Downloads/boost_1_81_0/stage/lib # -L$(OBJDIR)/foo # -shared
 LDLIBS    = -lpthread
