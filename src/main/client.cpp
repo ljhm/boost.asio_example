@@ -1,11 +1,8 @@
 // ./boost_1_81_0/doc/html/boost_asio/example/cpp11/timeouts/async_tcp_client.cpp
 
-#include <boost/asio/buffer.hpp>
-#include <boost/asio/io_context.hpp>
-#include <boost/asio/ip/tcp.hpp>
-#include <boost/asio/write.hpp>
 #include <iostream>
 #include <string>
+#include <boost/asio.hpp>
 
 #ifndef NDEBUG
 #include <sanitizer/lsan_interface.h>
@@ -28,7 +25,8 @@ struct session
   void start_read() {
     auto self(shared_from_this());
     memset(input_data, 0, sizeof(input_data));
-    socket.async_read_some(
+    boost::asio::async_read(
+      socket,
       boost::asio::buffer(input_data, sizeof(input_data)),
       [&, self](boost::system::error_code ec, std::size_t length) {
         if (!ec) {

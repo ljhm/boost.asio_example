@@ -2,8 +2,8 @@
 
 # build shared library with -fPIC, -shared
 CXXFLAGS  = -std=c++2a # -g -O3 -fPIC # CXXFLAGS for .cpp
-CPPFLAGS  = -MMD -MP -I/home/ljh/Downloads/boost_1_81_0/ # -I../foo
-LDFLAGS   = -L/home/ljh/Downloads/boost_1_81_0/stage/lib # -L$(OBJDIR)/foo # -shared
+CPPFLAGS  = -MMD -MP -I/Users/ljh/Downloads/boost_1_82_0 # -I../foo
+LDFLAGS   = -L/Users/ljh/Downloads/boost_1_82_0/stage/lib # -L$(OBJDIR)/foo # -shared
 LDLIBS    = -lpthread
 # CC      = $(CXX) # link with CXX for .cpp
 
