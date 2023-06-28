@@ -31,9 +31,9 @@ struct session
       [&, self](boost::system::error_code ec, std::size_t length) {
         if (!ec) {
           std::cout << input_data;
-          start_read();
+          start_read(); // continuous read test with recursion
         } else {
-          std::cout << ec.message() << "\n";
+          std::cout << ec.message() << "\n"; // error
         }
       }
     );
@@ -50,10 +50,9 @@ struct session
       [&, self](boost::system::error_code ec, std::size_t length)
       {
         if (!ec) {
-          // sleep(1); //test
-          start_write();
+          start_write(); // continuous write test with recursion
         } else {
-          std::cout << ec.message() << "\n";
+          std::cout << ec.message() << "\n"; // error
         }
       }
     );
