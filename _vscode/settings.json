@@ -1,7 +1,13 @@
 {
   "breadcrumbs.enabled": false,
   "breadcrumbs.icons": false,
+  "C_Cpp.autoAddFileAssociations": false,
   "C_Cpp.clang_format_fallbackStyle": "none",
+  "C_Cpp.default.cppStandard": "c++17",
+  "C_Cpp.default.cStandard": "c17",
+  "C_Cpp.default.includePath": [
+    "${workspaceFolder}/src/foo",
+  ],
   "C_Cpp.dimInactiveRegions": false,
   "C_Cpp.errorSquiggles": "Disabled",
   // "C_Cpp.formatting": "clangFormat",
@@ -11,8 +17,9 @@
     "--header-insertion=never",
   ],
   "clangd.fallbackFlags": [
-    // "-std=c++2a",
+    "-std=c++17",
     "-I../foo",
+    "-I/home/ljh/Downloads/boost_1_82_0",
   ],
   "clangd.semanticHighlighting": false,
   "debug.onTaskErrors": "showErrors",
@@ -25,7 +32,7 @@
   "editor.fontSize": 15,
   "editor.hover.enabled": false,
   "editor.inlayHints.enabled": "off",
-  "editor.lightbulb.enabled": false,
+  "editor.lightbulb.enabled": "off",
   // "editor.lineNumbers": "off", //
   "editor.links": false,
   "editor.minimap.enabled": false,
@@ -38,6 +45,7 @@
     72,
   ],
   "editor.semanticHighlighting.enabled": false,
+  "editor.stickyScroll.enabled": false,
   "editor.suggest.showIcons": false,
   // "editor.wordWrap": "wordWrapColumn", //
   "editor.wordWrapColumn": 72,
@@ -50,6 +58,7 @@
   "git.autofetch": true,
   "git.enableSmartCommit": true,
   "git.ignoreRebaseWarning": true,
+  "git.openRepositoryInParentFolders": "never",
   "go.toolsEnvVars": {
     "LD_LIBRARY_PATH": "/path/to/lib",
   },
@@ -92,11 +101,12 @@
   "vim.overrideCopy": false,
   "vim.wrapscan": false,
   "window.title": "${activeEditorLong}",
-  "workbench.colorTheme": "Default Dark Modern",
+  "workbench.editor.empty.hint": "hidden",
+  "workbench.editor.enablePreview": false,
   "workbench.editor.showIcons": false,
-  "workbench.editor.untitled.hint": "hidden",
   "workbench.iconTheme": null,
   "workbench.settings.editor": "json", //ui
   "workbench.settings.useSplitJSON": true,
   "workbench.startupEditor": "newUntitledFile",
+  "workbench.tree.enableStickyScroll": false,
 }
