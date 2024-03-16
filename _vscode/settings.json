@@ -19,12 +19,13 @@
   "clangd.fallbackFlags": [
     "-std=c++17",
     "-I../foo",
-    "-I/home/ljh/Downloads/boost_1_82_0",
+
   ],
   "clangd.semanticHighlighting": false,
   "debug.onTaskErrors": "showErrors",
   "debug.showBreakpointsInOverviewRuler": true,
   "diffEditor.maxComputationTime": 0,
+  "editor.accessibilitySupport": "off",
   "editor.codeLens": false,
   "editor.copyWithSyntaxHighlighting": false,
   "editor.dragAndDrop": false,
@@ -63,9 +64,6 @@
     "LD_LIBRARY_PATH": "/path/to/lib",
   },
   "http.proxySupport": "off",
-  "[Log]": {
-    "editor.fontSize": 12, // output same as terminal
-  },
   "outline.icons": false,
   "outline.showArrays": false,
   "outline.showBooleans": false,
@@ -92,6 +90,13 @@
   "rust-analyzer.completion.callable.snippets": "none",
   "rust-analyzer.completion.postfix.enable": false,
   "rust-analyzer.hover.actions.enable": false,
+  "rust-analyzer.hover.documentation.enable": false,
+  "rust-analyzer.hover.links.enable": false,
+  "rust-analyzer.hover.memoryLayout.enable": false,
+  "rust-analyzer.inlayHints.chainingHints.enable": false,
+  "rust-analyzer.inlayHints.closingBraceHints.enable": false,
+  "rust-analyzer.inlayHints.parameterHints.enable": false,
+  "rust-analyzer.inlayHints.renderColons": false,
   "rust-analyzer.inlayHints.typeHints.enable": false,
   "rust-analyzer.lens.enable": false,
   "terminal.integrated.copyOnSelection": true,
@@ -101,6 +106,7 @@
   "vim.overrideCopy": false,
   "vim.wrapscan": false,
   "window.title": "${activeEditorLong}",
+  "window.zoomPerWindow": false,
   "workbench.editor.empty.hint": "hidden",
   "workbench.editor.enablePreview": false,
   "workbench.editor.showIcons": false,
@@ -109,4 +115,5 @@
   "workbench.settings.useSplitJSON": true,
   "workbench.startupEditor": "newUntitledFile",
   "workbench.tree.enableStickyScroll": false,
+
 }
