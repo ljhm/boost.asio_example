@@ -13,15 +13,16 @@
   // "C_Cpp.formatting": "clangFormat",
   "C_Cpp.formatting": "none",
   "clangd.arguments": [
-    "--fallback-style=None",
+    // https://clang.llvm.org/docs/ClangFormat.html ,
+    "--fallback-style=none",
     "--header-insertion=never",
   ],
   "clangd.fallbackFlags": [
     "-std=c++17",
     "-I../foo",
-
   ],
   "clangd.semanticHighlighting": false,
+  "debug.internalConsoleOptions": "neverOpen",
   "debug.onTaskErrors": "showErrors",
   "debug.showBreakpointsInOverviewRuler": true,
   "diffEditor.maxComputationTime": 0,
@@ -31,6 +32,7 @@
   "editor.dragAndDrop": false,
   "editor.folding": false,
   "editor.fontSize": 15,
+  "editor.formatOnSave": true,
   "editor.hover.enabled": false,
   "editor.inlayHints.enabled": "off",
   "editor.lightbulb.enabled": "off",
@@ -60,10 +62,17 @@
   "git.enableSmartCommit": true,
   "git.ignoreRebaseWarning": true,
   "git.openRepositoryInParentFolders": "never",
+  "go.enableCodeLens": {
+    "references": false,
+    "runtest": false
+  },
+  "go.testExplorer.enable": false,
   "go.toolsEnvVars": {
     "LD_LIBRARY_PATH": "/path/to/lib",
+    "DYLD_LIBRARY_PATH": "/path/to/lib",
   },
   "http.proxySupport": "off",
+  "lldb.evaluateForHovers": false,
   "outline.icons": false,
   "outline.showArrays": false,
   "outline.showBooleans": false,
@@ -105,6 +114,7 @@
   "vim.hlsearch": true,
   "vim.overrideCopy": false,
   "vim.wrapscan": false,
+  "window.autoDetectColorScheme": true,
   "window.title": "${activeEditorLong}",
   "window.zoomPerWindow": false,
   "workbench.editor.empty.hint": "hidden",
@@ -115,5 +125,4 @@
   "workbench.settings.useSplitJSON": true,
   "workbench.startupEditor": "newUntitledFile",
   "workbench.tree.enableStickyScroll": false,
-
 }
