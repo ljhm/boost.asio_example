@@ -7,12 +7,8 @@
 #include <sanitizer/lsan_interface.h>
 #endif
 
-struct session
-  : public std::enable_shared_from_this<session>
-{
-  session(boost::asio::ip::tcp::socket socket)
-    : socket(std::move(socket))
-  { }
+struct session : public std::enable_shared_from_this<session> {
+  session(boost::asio::ip::tcp::socket socket) : socket(std::move(socket)) {}
 
   void start() {
     start_read();
@@ -23,36 +19,30 @@ struct session
     auto self(shared_from_this());
     memset(input_data, 0, sizeof(input_data));
     boost::asio::async_read(
-      socket,
-      boost::asio::buffer(input_data, sizeof(input_data)),
-      [&, self](boost::system::error_code ec, std::size_t length) {
-        if (!ec) {
-          std::cout << input_data;
-          start_read(); // continuous read test with recursion
-        } else {
-          std::cout << ec.message() << "\n"; // error
-        }
-      }
-    );
+        socket, boost::asio::buffer(input_data, sizeof(input_data)),
+        [this, self](boost::system::error_code ec, std::size_t length) {
+          if (!ec) {
+            std::cout << input_data;
+            start_read(); // continuous read test with recursion
+          } else {
+            std::cout << ec.message() << "\n"; // error
+          }
+        });
   }
 
   void start_write() {
     auto self(shared_from_this());
     memset(output_data, 0, sizeof(output_data));
-    snprintf(output_data, sizeof(output_data) - 1,
-      "hello client %zu\n", cnt++);
+    snprintf(output_data, sizeof(output_data) - 1, "hello client %zu\n", cnt++);
     boost::asio::async_write(
-      socket,
-      boost::asio::buffer(output_data, sizeof(output_data)),
-      [&, self](boost::system::error_code ec, std::size_t length)
-      {
-        if (!ec) {
-          start_write(); // continuous write test with recursion
-        } else {
-          std::cout << ec.message() << "\n"; // error
-        }
-      }
-    );
+        socket, boost::asio::buffer(output_data, sizeof(output_data)),
+        [this, self](boost::system::error_code ec, std::size_t length) {
+          if (!ec) {
+            start_write(); // continuous write test with recursion
+          } else {
+            std::cout << ec.message() << "\n"; // error
+          }
+        });
   }
 
   boost::asio::ip::tcp::socket socket;
@@ -63,29 +53,24 @@ struct session
 };
 
 struct server {
-  server(boost::asio::io_context& io_context, short port)
-    : acceptor(io_context, boost::asio::ip::tcp::endpoint(
-        boost::asio::ip::tcp::v4(), port))
-  {
+  server(boost::asio::io_context &io_context, short port)
+      : acceptor(io_context, boost::asio::ip::tcp::endpoint(
+                                 boost::asio::ip::tcp::v4(), port)) {
     std::cout << "Listen on port: " << port << " \n";
     do_accept();
   }
 
   void do_accept() {
-    acceptor.async_accept(
-      [&](boost::system::error_code ec,
-        boost::asio::ip::tcp::socket socket)
-      {
-        if (!ec) {
-          std::cout << "Accept connection: "
-            << socket.remote_endpoint() << "\n";
-          std::make_shared<session>(std::move(socket))->start();
-        } else {
-          std::cout << ec.message() << "\n";
-        }
-        do_accept();
+    acceptor.async_accept([this](boost::system::error_code ec,
+                                 boost::asio::ip::tcp::socket socket) {
+      if (!ec) {
+        std::cout << "Accept connection: " << socket.remote_endpoint() << "\n";
+        std::make_shared<session>(std::move(socket))->start();
+      } else {
+        std::cout << ec.message() << "\n";
       }
-    );
+      do_accept();
+    });
   }
 
   boost::asio::ip::tcp::acceptor acceptor;
@@ -98,7 +83,7 @@ void handlerCont(int signum) {
 #endif
 }
 
-int main(int argc, char* argv[]) {
+int main(int argc, char *argv[]) {
   if (argc != 2) {
     std::cerr << "Usage: server <port>\n";
     return 1;
@@ -112,4 +97,3 @@ int main(int argc, char* argv[]) {
 
   return 0;
 }
-
