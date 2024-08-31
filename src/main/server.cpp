@@ -1,14 +1,15 @@
-// ./boost_1_81_0/doc/html/boost_asio/example/cpp11/echo/async_tcp_echo_server.cpp
+
+// https://github.com/chriskohlhoff/asio/blob/master/asio/src/examples/cpp11/echo/async_tcp_echo_server.cpp
 
 #include <iostream>
-#include <boost/asio.hpp>
+#include <asio.hpp>
 
 #ifndef NDEBUG
 #include <sanitizer/lsan_interface.h>
 #endif
 
 struct session : public std::enable_shared_from_this<session> {
-  session(boost::asio::ip::tcp::socket socket) : socket(std::move(socket)) {}
+  session(asio::ip::tcp::socket socket) : socket(std::move(socket)) {}
 
   void start() {
     start_read();
@@ -18,34 +19,32 @@ struct session : public std::enable_shared_from_this<session> {
   void start_read() {
     auto self(shared_from_this());
     memset(input_data, 0, sizeof(input_data));
-    boost::asio::async_read(
-        socket, boost::asio::buffer(input_data, sizeof(input_data)),
-        [this, self](boost::system::error_code ec, std::size_t length) {
-          if (!ec) {
-            std::cout << input_data;
-            start_read(); // continuous read test with recursion
-          } else {
-            std::cout << ec.message() << "\n"; // error
-          }
-        });
+    asio::async_read(socket, asio::buffer(input_data, sizeof(input_data)),
+                     [this, self](std::error_code ec, std::size_t length) {
+                       if (!ec) {
+                         std::cout << input_data;
+                         start_read(); // continuous read test with recursion
+                       } else {
+                         std::cout << ec.message() << "\n"; // error
+                       }
+                     });
   }
 
   void start_write() {
     auto self(shared_from_this());
     memset(output_data, 0, sizeof(output_data));
     snprintf(output_data, sizeof(output_data) - 1, "hello client %zu\n", cnt++);
-    boost::asio::async_write(
-        socket, boost::asio::buffer(output_data, sizeof(output_data)),
-        [this, self](boost::system::error_code ec, std::size_t length) {
-          if (!ec) {
-            start_write(); // continuous write test with recursion
-          } else {
-            std::cout << ec.message() << "\n"; // error
-          }
-        });
+    asio::async_write(socket, asio::buffer(output_data, sizeof(output_data)),
+                      [this, self](std::error_code ec, std::size_t length) {
+                        if (!ec) {
+                          start_write(); // continuous write test with recursion
+                        } else {
+                          std::cout << ec.message() << "\n"; // error
+                        }
+                      });
   }
 
-  boost::asio::ip::tcp::socket socket;
+  asio::ip::tcp::socket socket;
   enum { LEN = 1024 };
   char input_data[LEN];
   char output_data[LEN];
@@ -53,16 +52,16 @@ struct session : public std::enable_shared_from_this<session> {
 };
 
 struct server {
-  server(boost::asio::io_context &io_context, short port)
-      : acceptor(io_context, boost::asio::ip::tcp::endpoint(
-                                 boost::asio::ip::tcp::v4(), port)) {
+  server(asio::io_context &io_context, short port)
+      : acceptor(io_context,
+                 asio::ip::tcp::endpoint(asio::ip::tcp::v4(), port)) {
     std::cout << "Listen on port: " << port << " \n";
     do_accept();
   }
 
   void do_accept() {
-    acceptor.async_accept([this](boost::system::error_code ec,
-                                 boost::asio::ip::tcp::socket socket) {
+    acceptor.async_accept([this](std::error_code ec,
+                                 asio::ip::tcp::socket socket) {
       if (!ec) {
         std::cout << "Accept connection: " << socket.remote_endpoint() << "\n";
         std::make_shared<session>(std::move(socket))->start();
@@ -73,7 +72,7 @@ struct server {
     });
   }
 
-  boost::asio::ip::tcp::acceptor acceptor;
+  asio::ip::tcp::acceptor acceptor;
 };
 
 void handlerCont(int signum) {
@@ -91,7 +90,7 @@ int main(int argc, char *argv[]) {
 
   signal(SIGCONT, handlerCont); // kill -CONT 123 # pid
 
-  boost::asio::io_context io_context;
+  asio::io_context io_context;
   server s(io_context, std::atoi(argv[1]));
   io_context.run();
 

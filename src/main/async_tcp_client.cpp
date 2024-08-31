@@ -1,26 +1,28 @@
-// ./boost_1_81_0/doc/html/boost_asio/example/cpp11/timeouts/async_tcp_client.cpp
+
+// https://github.com/chriskohlhoff/asio/blob/master/asio/src/examples/cpp11/timeouts/async_tcp_client.cpp
+
 //
 // async_tcp_client.cpp
 // ~~~~~~~~~~~~~~~~~~~~
 //
-// Copyright (c) 2003-2022 Christopher M. Kohlhoff (chris at kohlhoff dot com)
+// Copyright (c) 2003-2024 Christopher M. Kohlhoff (chris at kohlhoff dot com)
 //
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
 //
 
-#include <boost/asio/buffer.hpp>
-#include <boost/asio/io_context.hpp>
-#include <boost/asio/ip/tcp.hpp>
-#include <boost/asio/read_until.hpp>
-#include <boost/asio/steady_timer.hpp>
-#include <boost/asio/write.hpp>
+#include "asio/buffer.hpp"
+#include "asio/io_context.hpp"
+#include "asio/ip/tcp.hpp"
+#include "asio/read_until.hpp"
+#include "asio/steady_timer.hpp"
+#include "asio/write.hpp"
 #include <functional>
 #include <iostream>
 #include <string>
 
-using boost::asio::steady_timer;
-using boost::asio::ip::tcp;
+using asio::steady_timer;
+using asio::ip::tcp;
 using std::placeholders::_1;
 using std::placeholders::_2;
 
@@ -84,20 +86,15 @@ using std::placeholders::_2;
 // newline character) every 10 seconds. In this example, no deadline is applied
 // to message sending.
 //
-class client
-{
+class client {
 public:
-  client(boost::asio::io_context& io_context)
-    : socket_(io_context),
-      deadline_(io_context),
-      heartbeat_timer_(io_context)
-  {
-  }
+  client(asio::io_context &io_context)
+      : socket_(io_context), deadline_(io_context),
+        heartbeat_timer_(io_context) {}
 
   // Called by the user of the client class to initiate the connection process.
   // The endpoints will have been obtained using a tcp::resolver.
-  void start(tcp::resolver::results_type endpoints)
-  {
+  void start(tcp::resolver::results_type endpoints) {
     // Start the connect actor.
     endpoints_ = endpoints;
     start_connect(endpoints_.begin());
@@ -111,48 +108,41 @@ public:
   // This function terminates all the actors to shut down the connection. It
   // may be called by the user of the client class, or by the class itself in
   // response to graceful termination or an unrecoverable error.
-  void stop()
-  {
+  void stop() {
     stopped_ = true;
-    boost::system::error_code ignored_error;
+    std::error_code ignored_error;
     socket_.close(ignored_error);
     deadline_.cancel();
     heartbeat_timer_.cancel();
   }
 
 private:
-  void start_connect(tcp::resolver::results_type::iterator endpoint_iter)
-  {
-    if (endpoint_iter != endpoints_.end())
-    {
+  void start_connect(tcp::resolver::results_type::iterator endpoint_iter) {
+    if (endpoint_iter != endpoints_.end()) {
       std::cout << "Trying " << endpoint_iter->endpoint() << "...\n";
 
       // Set a deadline for the connect operation.
       deadline_.expires_after(std::chrono::seconds(60));
 
       // Start the asynchronous connect operation.
-      socket_.async_connect(endpoint_iter->endpoint(),
-          std::bind(&client::handle_connect,
-            this, _1, endpoint_iter));
-    }
-    else
-    {
+      socket_.async_connect(
+          endpoint_iter->endpoint(),
+          std::bind(&client::handle_connect, this, _1, endpoint_iter));
+    } else {
       // There are no more endpoints to try. Shut down the client.
       stop();
     }
   }
 
-  void handle_connect(const boost::system::error_code& error,
-      tcp::resolver::results_type::iterator endpoint_iter)
-  {
+  void handle_connect(const std::error_code &error,
+                      tcp::resolver::results_type::iterator endpoint_iter) {
     if (stopped_)
       return;
 
     // The async_connect() function automatically opens the socket at the start
     // of the asynchronous operation. If the socket is closed at this time then
     // the timeout handler must have run first.
-    if (!socket_.is_open())
-    {
+    if (!socket_.is_open()) {
       std::cout << "Connect timed out\n";
 
       // Try the next available endpoint.
@@ -160,8 +150,7 @@ private:
     }
 
     // Check if the connect operation failed before the deadline expired.
-    else if (error)
-    {
+    else if (error) {
       std::cout << "Connect error: " << error.message() << "\n";
 
       // We need to close the socket used in the previous connection attempt
@@ -173,8 +162,7 @@ private:
     }
 
     // Otherwise we have successfully established a connection.
-    else
-    {
+    else {
       std::cout << "Connected to " << endpoint_iter->endpoint() << "\n";
 
       // Start the input actor.
@@ -185,83 +173,69 @@ private:
     }
   }
 
-  void start_read()
-  {
+  void start_read() {
     // Set a deadline for the read operation.
     deadline_.expires_after(std::chrono::seconds(30));
 
     // Start an asynchronous operation to read a newline-delimited message.
-    boost::asio::async_read_until(socket_,
-        boost::asio::dynamic_buffer(input_buffer_), '\n',
-        std::bind(&client::handle_read, this, _1, _2));
+    asio::async_read_until(socket_, asio::dynamic_buffer(input_buffer_), '\n',
+                           std::bind(&client::handle_read, this, _1, _2));
   }
 
-  void handle_read(const boost::system::error_code& error, std::size_t n)
-  {
+  void handle_read(const std::error_code &error, std::size_t n) {
     if (stopped_)
       return;
 
-    if (!error)
-    {
+    if (!error) {
       // Extract the newline-delimited message from the buffer.
       std::string line(input_buffer_.substr(0, n - 1));
       input_buffer_.erase(0, n);
 
       // Empty messages are heartbeats and so ignored.
-      if (!line.empty())
-      {
+      if (!line.empty()) {
         std::cout << "Received: " << line << "\n";
       }
 
       start_read();
-    }
-    else
-    {
+    } else {
       std::cout << "Error on receive: " << error.message() << "\n";
 
       stop();
     }
   }
 
-  void start_write()
-  {
+  void start_write() {
     if (stopped_)
       return;
 
     // Start an asynchronous operation to send a heartbeat message.
-    boost::asio::async_write(socket_, boost::asio::buffer("\n", 1),
-        std::bind(&client::handle_write, this, _1));
+    asio::async_write(socket_, asio::buffer("\n", 1),
+                      std::bind(&client::handle_write, this, _1));
   }
 
-  void handle_write(const boost::system::error_code& error)
-  {
+  void handle_write(const std::error_code &error) {
     if (stopped_)
       return;
 
-    if (!error)
-    {
+    if (!error) {
       // Wait 10 seconds before sending the next heartbeat.
       heartbeat_timer_.expires_after(std::chrono::seconds(10));
       heartbeat_timer_.async_wait(std::bind(&client::start_write, this));
-    }
-    else
-    {
+    } else {
       std::cout << "Error on heartbeat: " << error.message() << "\n";
 
       stop();
     }
   }
 
-  void check_deadline()
-  {
+  void check_deadline() {
     if (stopped_)
       return;
 
     // Check whether the deadline has passed. We compare the deadline against
     // the current time since a new asynchronous operation may have moved the
     // deadline before this actor had a chance to run.
-    if (deadline_.expiry() <= steady_timer::clock_type::now())
-    {
+    if (deadline_.expiry() <= steady_timer::clock_type::now()) {
       // The deadline has passed. The socket is closed so that any outstanding
       // asynchronous operations are cancelled.
       socket_.close();
@@ -285,26 +259,21 @@ private:
   steady_timer heartbeat_timer_;
 };
 
-int main(int argc, char* argv[])
-{
-  try
-  {
-    if (argc != 3)
-    {
+int main(int argc, char *argv[]) {
+  try {
+    if (argc != 3) {
       std::cerr << "Usage: client <host> <port>\n";
       return 1;
     }
 
-    boost::asio::io_context io_context;
+    asio::io_context io_context;
     tcp::resolver r(io_context);
     client c(io_context);
 
     c.start(r.resolve(argv[1], argv[2]));
 
     io_context.run();
-  }
-  catch (std::exception& e)
-  {
+  } catch (std::exception &e) {
     std::cerr << "Exception: " << e.what() << "\n";
   }
 

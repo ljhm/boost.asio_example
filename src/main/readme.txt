@@ -1,3 +1,14 @@
+non boost
+
+// https://github.com/chriskohlhoff/asio/blob/master/asio/src/examples/cpp11/echo/async_tcp_echo_server.cpp ,
+// https://github.com/chriskohlhoff/asio/blob/master/asio/src/examples/cpp11/timeouts/async_tcp_client.cpp ,
+
+
+---
+
+
+boost
+
 $ apt install libboost-dev
 
 // ./boost_1_81_0/doc/html/boost_asio/example/cpp11/echo/async_tcp_echo_server.cpp
