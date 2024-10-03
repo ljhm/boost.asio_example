@@ -1,9 +1,9 @@
 
 // https://github.com/chriskohlhoff/asio/blob/master/asio/src/examples/cpp11/timeouts/async_tcp_client.cpp
 
+#include <asio.hpp>
 #include <iostream>
 #include <string>
-#include <asio.hpp>
 
 #ifndef NDEBUG
 #include <sanitizer/lsan_interface.h>

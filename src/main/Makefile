@@ -1,9 +1,9 @@
 # Makefile for subdir
 
 # build shared library with -fPIC, -shared
-CXXFLAGS  = -std=c++2a # -g -O3 -fPIC # CXXFLAGS for .cpp
+CXXFLAGS  =  -std=c++2a # -g -O3 -fPIC # CXXFLAGS for .cpp
 CPPFLAGS  = -MMD -MP -I/Users/ljh/Downloads/asio-1.30.2/include # -I../foo
-LDFLAGS   = # -L$(OBJDIR)/foo # -shared
+LDFLAGS   =  # -L$(OBJDIR)/foo # -shared
 LDLIBS    = -lpthread
 # CC      = $(CXX) # link with CXX for .cpp
 
@@ -16,7 +16,7 @@ ifdef NDEBUG
 CXXFLAGS += -O3 # .cpp
 CPPFLAGS += -DNDEBUG
 else
-CXXFLAGS += -g # .cpp
+CXXFLAGS += -fsanitize=address  -g # .cpp
 LDFLAGS  += -fsanitize=address
 endif
 

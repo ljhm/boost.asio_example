@@ -1,8 +1,8 @@
 
 // https://github.com/chriskohlhoff/asio/blob/master/asio/src/examples/cpp11/echo/async_tcp_echo_server.cpp
 
-#include <iostream>
 #include <asio.hpp>
+#include <iostream>
 
 #ifndef NDEBUG
 #include <sanitizer/lsan_interface.h>
