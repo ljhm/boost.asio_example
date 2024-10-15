@@ -40,5 +40,5 @@ $(SUBDIR)/%.o : %.cpp | $(SUBDIR) # .cpp
 $(SUBDIR) : ; @ mkdir $@
 
 -include $(SUBDIR)/*.d
-clean : ; -rm -fr $(SUBDIR)
+clean : ; -rm -fr $(SUBDIR) client server
 .PHONY : all clean
